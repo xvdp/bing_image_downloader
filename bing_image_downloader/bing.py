@@ -182,7 +182,7 @@ class Bing:
     def run(self):
         _errors = 0
         _max_errors = 5
-        _max_count = 1000
+        _max_count = 70 # reset on downoads
         while self.download_count < self.limit and self.page_counter < _max_count:
             if self.verbose:
                 print(f'[!!]Indexing page: {self.page_counter + 1}')
@@ -206,6 +206,7 @@ class Bing:
                     if self.download_count < self.limit and link not in self.seen:
                         self.seen.add(link)
                         self.download_image(link)
+                        _max_count = 0
 
                 self.page_counter += 1
             except Exception as _e:
