@@ -7,6 +7,7 @@ added attribution json file, containing name:link
 minor linting
 '''
 import warnings
+import time
 from typing import Optional, Union
 import os.path as osp
 import urllib
@@ -179,6 +180,8 @@ class Bing:
 
 
     def run(self):
+        _errors = 0
+        _max_errors = 5
         while self.download_count < self.limit:
             if self.verbose:
                 print(f'[!!]Indexing page: {self.page_counter + 1}')
@@ -186,21 +189,31 @@ class Bing:
             request_url = 'https://www.bing.com/images/async?q=' + urllib.parse.quote_plus(self.query) \
                           + '&first=' + str(self.page_counter) + '&count=' + str(self.limit) \
                           + '&adlt=' + self.adult + '&qft=' + self.filters
-            request = urllib.request.Request(request_url, None, headers=self.headers)
-            response = urllib.request.urlopen(request)
-            html = response.read().decode('utf8')
-            if html ==  "":
-                print("[%] No more images are available")
-                break
-            links = re.findall('murl&quot;:&quot;(.*?)&quot;', html)
-            if self.verbose:
-                print(f"[%] Indexed {len(links)} Images on Page {self.page_counter + 1}")
-                print("===============================================")
+            try:
+                request = urllib.request.Request(request_url, None, headers=self.headers)
+                response = urllib.request.urlopen(request)
+                html = response.read().decode('utf8')
+                if html ==  "":
+                    print("[%] No more images are available")
+                    break
+                links = re.findall('murl&quot;:&quot;(.*?)&quot;', html)
+                if self.verbose:
+                    print(f"[%] Indexed {len(links)} Images on Page {self.page_counter + 1}")
+                    print("===============================================")
 
-            for link in links:
-                if self.download_count < self.limit and link not in self.seen:
-                    self.seen.add(link)
-                    self.download_image(link)
+                for link in links:
+                    if self.download_count < self.limit and link not in self.seen:
+                        self.seen.add(link)
+                        self.download_image(link)
 
-            self.page_counter += 1
+                self.page_counter += 1
+            except Exception as _e:
+                print(f"url request Exception {_e} request{request }\n response {response}")
+                _errors += 1
+                time.sleep(1)
+                if _errors >= _max_errors:
+                    print("\nmax-errors 5, sleeping 4 seconds...\n")
+                    time.sleep(4)
+                    break
+
         print(f"[%] Done. Downloaded {self.download_count} images.")
