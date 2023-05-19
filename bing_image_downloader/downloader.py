@@ -18,7 +18,8 @@ def download(query: str,
              img_type: Optional[str] = None, # filters
              color: Optional[str] = None, # filters
              size: Optional[str] = None,
-             aspect: Optional[str] = None, 
+             aspect: Optional[str] = None,
+             people: Optional[str] = None,
              verbose=True) -> None:
     """
     added filter args
@@ -29,6 +30,7 @@ def download(query: str,
         img_type    None(all) or [l]inedrawing, [p]hoto, [c]lipart, [g]if | [a]nimatedgif, [t]ransparent
         size        None(all) [w]allpaper, [l]arge, [m]edium, [s]mall
         aspect      None(all) [s]quare [w]ide [t]all
+        people      None(all) [f]face [p]portrait
 
         """
     # engine = 'bing'
@@ -54,7 +56,7 @@ def download(query: str,
 
     print("[%] Downloading Images to {}".format(str(image_dir.absolute())))
     bing = Bing(query, limit, image_dir, adult, timeout, img_type, color,
-                size, aspect, verbose)
+                size, aspect, people, verbose)
     bing.run()
 
 

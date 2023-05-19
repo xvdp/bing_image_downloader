@@ -22,8 +22,9 @@ class Bing:
                  timeout: int,
                  img_type: Optional[str] = None, # filters
                  color: Optional[str] = None, # filters
-                 size: Optional[str] = None,
-                 aspect: Optional[str] = None,
+                 size: Optional[str] = None, # filters
+                 aspect: Optional[str] = None, # filters
+                 people: Optional[str] = None, # filters
                  verbose: bool = True) -> None:
         """
         added filter args
@@ -34,6 +35,7 @@ class Bing:
             img_type    None(all) or [l]inedrawing, [p]hoto, [c]lipart, [g]if | [a]nimatedgif, [t]ransparent
             size        None(all) [w]allpaper, [l]arge, [m]edium, [s]mall
             aspect      None(all) [s]quare [w]ide [t]all
+            people      None(all) [f]face [p]portrait
             
 
         """
@@ -41,7 +43,7 @@ class Bing:
         self.query = query
         self.output_dir = output_dir
         self.adult = adult
-        self.filters = self.get_filters(img_type, color, size, aspect)
+        self.filters = self.get_filters(img_type, color, size, aspect, people)
         self.verbose = verbose
         self.seen = set()
 
@@ -63,7 +65,7 @@ class Bing:
 
 
     @staticmethod
-    def get_filters(img_type, color, size, aspect):
+    def get_filters(img_type, color, size, aspect, people):
         """ multiple image filters"""
         out = ''
         if img_type is not None:
@@ -94,6 +96,10 @@ class Bing:
             _aspects = {'s':'square', 'w':'wide', 't':'tall'}
             if aspect.lower()[0] in _aspects:
                 out += f"+filterui:aspect-{_aspects[aspect.lower()]}"
+        if people is not None:
+            _peoples = {'p':'portrait', 'f':'face'}
+            if people.lower()[0] in _peoples:
+                out += f"+filterui:face-{_peoples[people.lower()[0]]}"
         return out
 
 

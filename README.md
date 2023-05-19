@@ -31,6 +31,11 @@ pip install .
 ```python
 from bing_image_downloader import downloader
 downloader.download(query_string, limit=100,  output_dir='dataset', adult_filter_off=True, force_replace=False, timeout=60, verbose=True)
+downloader.download(query_string, limit=100,  output_dir='.', size='w') # dowloads large images 'wallpaper
+downloader.download(query_string, limit=100,  output_dir='.', color='bw') # only grayscale images
+downloader.download(query_string, limit=100,  output_dir='.', aspect='square') # square images
+downloader.download(query_string, limit=100,  output_dir='.', img_type='photo') # photographs
+downloader.download(query_string, limit=100,  output_dir='.', people='face') # faces only
 ```
 
 `query_string` : String to be searched.<br />
@@ -43,6 +48,7 @@ Filter args: replaces `filter` arg which only affected image type with more filt
 `color`:       None(all) or color, bw, RED, ORANGE, GREEN, YELLOW, TEAL, BLUE, PURPLE, BROWN, BLACK, GRAY, WHITE<br />
 `img_type`:    None(all) or [l]inedrawing, [p]hoto, [c]lipart, [g]if | [a]nimatedgif, [t]ransparent # can either be full name or first initial<br />
 `size`:        None(all) [w]allpaper, [l]arge, [m]edium, [s]mall # can either be full name or first initial<br />
+`people`:      None(all) [p]ortrait, [f]ace  # can either be full name or first initial<br />
 `aspect`:      None(all) [s]quare [w]ide [t]all # can either be full name or first initial<br />
 `verbose` : (optional, default is True) Enable downloaded message.<br />
 
