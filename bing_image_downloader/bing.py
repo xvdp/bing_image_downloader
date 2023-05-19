@@ -182,7 +182,8 @@ class Bing:
     def run(self):
         _errors = 0
         _max_errors = 5
-        while self.download_count < self.limit:
+        _max_count = 1000
+        while self.download_count < self.limit and self.page_counter < _max_count:
             if self.verbose:
                 print(f'[!!]Indexing page: {self.page_counter + 1}')
             # Parse the page source and download pics
