@@ -10,6 +10,7 @@ import warnings
 from typing import Optional
 import os.path as osp
 import urllib
+import urllib.request
 import re
 import imghdr
 import posixpath
@@ -139,8 +140,8 @@ class Bing:
         request = urllib.request.Request(link, None, self.headers)
         image = urllib.request.urlopen(request, timeout=self.timeout).read()
         if not imghdr.what(None, image):
-            print(f'[Error]Invalid image, not saving {link}\n')
-            raise ValueError(f'Invalid image, not saving {link}\n')
+            print(f'[Error]Invalid image, not saving {link}')
+            raise ValueError(f'Invalid image, not saving {link}')
         with open(str(file_path), 'wb') as _f:
             _f.write(image)
         self.add_atribution(link, file_path)
@@ -168,11 +169,11 @@ class Bing:
             self.save_image(link, name)
 
             if self.verbose:
-                print("[%] File Downloaded !\n")
+                print("[%] File Downloaded !")
 
         except Exception as _e:
             self.download_count -= 1
-            print(f"[!] Issue getting: {link}\n[!] Error:: {_e}")
+            print(f"[!] Issue getting: {link}[!] Error:: {_e}")
 
 
     def run(self):
