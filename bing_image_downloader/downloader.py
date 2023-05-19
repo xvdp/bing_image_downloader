@@ -1,4 +1,5 @@
-import os, sys
+from typing import Optional
+import sys
 import shutil
 from pathlib import Path
 
@@ -8,16 +9,34 @@ except ImportError:  # Python 3
     from .bing import Bing
 
 
-def download(query, limit=100, output_dir='dataset', adult_filter_off=True, 
-force_replace=False, timeout=60, filter="", verbose=True):
+def download(query: str,
+             limit: int = 100,
+             output_dir: str = 'dataset',
+             adult_filter_off: bool = True,
+             force_replace: bool = False,
+             timeout: int = 60,
+             img_type: Optional[str] = None, # filters
+             color: Optional[str] = None, # filters
+             size: Optional[str] = None,
+             aspect: Optional[str] = None, 
+             verbose=True) -> None:
+    """
+    added filter args
+    filter args:
+        color       None(all) or color, bw, RED, ORANGE, GREEN, YELLOW, TEAL, BLUE,
+                                    PURPLE, BROWN, BLACK, GRAY, WHITE
+            img_type, size and aspect can either be full name or first initial
+        img_type    None(all) or [l]inedrawing, [p]hoto, [c]lipart, [g]if | [a]nimatedgif, [t]ransparent
+        size        None(all) [w]allpaper, [l]arge, [m]edium, [s]mall
+        aspect      None(all) [s]quare [w]ide [t]all
 
+        """
     # engine = 'bing'
     if adult_filter_off:
         adult = 'off'
     else:
         adult = 'on'
 
-    
     image_dir = Path(output_dir).joinpath(query).absolute()
 
     if force_replace:
@@ -32,9 +51,10 @@ force_replace=False, timeout=60, filter="", verbose=True):
     except Exception as e:
         print('[Error]Failed to create directory.', e)
         sys.exit(1)
-        
+
     print("[%] Downloading Images to {}".format(str(image_dir.absolute())))
-    bing = Bing(query, limit, image_dir, adult, timeout, filter, verbose)
+    bing = Bing(query, limit, image_dir, adult, timeout, img_type, color,
+                size, aspect, verbose)
     bing.run()
 
 
