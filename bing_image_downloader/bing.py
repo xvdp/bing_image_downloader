@@ -6,11 +6,19 @@ import urllib
 import imghdr
 import posixpath
 import re
+import hashlib
 
 '''
 Python api to download image form Bing.
 Author: Guru Prasad (g.gaurav541@gmail.com)
 '''
+def md5(data):
+    m = hashlib.md5()
+    if isinstance(data, str):
+        m.update(data.encode())
+    else:
+        m.update(data)
+    return m.hexdigest()
 
 
 class Bing:
@@ -88,18 +96,21 @@ class Bing:
                 warnings.warn(f"ignoring, image color: {color} not found in {_colors}")
         if size is not None:
             _sizes = {'w':'wallpaper', 'l':'large', 'm':'medium', 's':'small'}
-            if size.lower()[0] in _sizes:
-                out += f"+filterui:imagesize-{_sizes[size.lower()]}"
+            _s = size.lower()[0]
+            if _s in _sizes:
+                out += f"+filterui:imagesize-{_sizes[_s]}"
             else:
                 warnings.warn(f"ignoring, image size: {size} not found in {_sizes.values()}")
         if aspect is not None:
             _aspects = {'s':'square', 'w':'wide', 't':'tall'}
-            if aspect.lower()[0] in _aspects:
-                out += f"+filterui:aspect-{_aspects[aspect.lower()]}"
+            _a = aspect.lower()[0]
+            if _a in _aspects:
+                out += f"+filterui:aspect-{_aspects[_a]}"
         if people is not None:
             _peoples = {'p':'portrait', 'f':'face'}
-            if people.lower()[0] in _peoples:
-                out += f"+filterui:face-{_peoples[people.lower()[0]]}"
+            _p = people.lower()[0]
+            if _p in _peoples:
+                out += f"+filterui:face-{_peoples[_p]}"
         return out
 
 
@@ -127,8 +138,11 @@ class Bing:
                 # Download the image
                 print("[%] Downloading Image #{} from {}".format(self.download_count, link))
 
-            self.save_image(link, self.output_dir.joinpath("Image_{}.{}".format(
-                str(self.download_count), file_type)))
+            name =  self.output_dir.joinpath(f"{md5(link)}.{file_type}")
+            self.save_image(link, name)
+
+            # self.save_image(link, self.output_dir.joinpath("Image_{}.{}".format(
+            #     str(self.download_count), file_type)))
             if self.verbose:
                 print("[%] File Downloaded !\n")
 
@@ -136,7 +150,7 @@ class Bing:
             self.download_count -= 1
             print("[!] Issue getting: {}\n[!] Error:: {}".format(link, e))
 
-    
+
     def run(self):
         while self.download_count < self.limit:
             if self.verbose:
