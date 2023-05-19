@@ -1,17 +1,22 @@
-import warnings
-from typing import Optional
-from pathlib import Path
-import urllib.request
-import urllib
-import imghdr
-import posixpath
-import re
-import hashlib
-
 '''
 Python api to download image form Bing.
 Author: Guru Prasad (g.gaurav541@gmail.com)
+
+@xvdp mod: added filters
+added attribution json file, containing name:link
+minor linting
 '''
+import warnings
+from typing import Optional
+import os.path as osp
+import urllib
+import re
+import imghdr
+import posixpath
+import hashlib
+import json
+
+
 def md5(data):
     m = hashlib.md5()
     if isinstance(data, str):
@@ -19,7 +24,6 @@ def md5(data):
     else:
         m.update(data)
     return m.hexdigest()
-
 
 class Bing:
     def __init__(self,
@@ -47,22 +51,25 @@ class Bing:
             
 
         """
+        assert isinstance(limit, int), f"limit must be integer, got {limit}"
+        assert isinstance(timeout, int), f"timeout must be integer, got {timeout}"
+
         self.download_count = 0
         self.query = query
         self.output_dir = output_dir
         self.adult = adult
-        self.filters = self.get_filters(img_type, color, size, aspect, people)
         self.verbose = verbose
         self.seen = set()
-
-        assert type(limit) == int, "limit must be integer"
         self.limit = limit
-        assert type(timeout) == int, "timeout must be integer"
         self.timeout = timeout
+
+        self.filters = self.get_filters(img_type, color, size, aspect, people)
+        self.atribution_fname = osp.join(output_dir, "bing_dl.json")
+        self.attribution = {}
 
         # self.headers = {'User-Agent': 'Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0'}
         self.page_counter = 0
-        self.headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) ' 
+        self.headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) '
       'AppleWebKit/537.11 (KHTML, like Gecko) '
       'Chrome/23.0.1271.64 Safari/537.11',
       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -74,7 +81,7 @@ class Bing:
 
     @staticmethod
     def get_filters(img_type, color, size, aspect, people):
-        """ multiple image filters"""
+        """ most standard bing image filters"""
         out = ''
         if img_type is not None:
             _types = {'l':'linedrawing', 'p':'photo', 'g':'animatedgif', 'a':'animatedgif',
@@ -114,47 +121,64 @@ class Bing:
         return out
 
 
+    def add_atribution(self, link, file_path):
+        """ @xvdp basic traceability info relating the saved file to url
+        TODO test
+        """
+        if osp.isfile(self.atribution_fname):
+            with open(self.atribution_fname, 'r', encoding='utf8') as _fi:
+                self.attribution = json.load(_fi)
+        self.attribution[file_path] = link
+        with open(self.atribution_fname, 'w', encoding='utf8') as _fi:
+            json.dump(self.attribution, _fi)
+
+
     def save_image(self, link, file_path):
+        """ @xvdp added dict storing name:url
+        """
         request = urllib.request.Request(link, None, self.headers)
         image = urllib.request.urlopen(request, timeout=self.timeout).read()
         if not imghdr.what(None, image):
-            print('[Error]Invalid image, not saving {}\n'.format(link))
-            raise ValueError('Invalid image, not saving {}\n'.format(link))
-        with open(str(file_path), 'wb') as f:
-            f.write(image)
+            print(f'[Error]Invalid image, not saving {link}\n')
+            raise ValueError(f'Invalid image, not saving {link}\n')
+        with open(str(file_path), 'wb') as _f:
+            _f.write(image)
+        self.add_atribution(link, file_path)
+
 
     def download_image(self, link):
+        """ downloader
+            xvdp - changed naming scheme to name_{mdhash(link)}
+        """
         self.download_count += 1
         # Get the image link
         try:
             path = urllib.parse.urlsplit(link).path
             filename = posixpath.basename(path).split('?')[0]
-            file_type = filename.split(".")[-1]
+            name, file_type = osp.splitext(osp.basename(filename))
             if file_type.lower() not in ["jpe", "jpeg", "jfif", "exif", "tiff",
                                          "gif", "bmp", "png", "webp", "jpg"]:
                 file_type = "jpg"
 
             if self.verbose:
                 # Download the image
-                print("[%] Downloading Image #{} from {}".format(self.download_count, link))
+                print(f"[%] Downloading Image #{self.download_count} from {link}")
 
-            name =  self.output_dir.joinpath(f"{md5(link)}.{file_type}")
+            name =  self.output_dir.joinpath(f"{name}_{md5(link)}.{file_type}")
             self.save_image(link, name)
 
-            # self.save_image(link, self.output_dir.joinpath("Image_{}.{}".format(
-            #     str(self.download_count), file_type)))
             if self.verbose:
                 print("[%] File Downloaded !\n")
 
-        except Exception as e:
+        except Exception as _e:
             self.download_count -= 1
-            print("[!] Issue getting: {}\n[!] Error:: {}".format(link, e))
+            print(f"[!] Issue getting: {link}\n[!] Error:: {_e}")
 
 
     def run(self):
         while self.download_count < self.limit:
             if self.verbose:
-                print('\n\n[!!]Indexing page: {}\n'.format(self.page_counter + 1))
+                print(f'[!!]Indexing page: {self.page_counter + 1}')
             # Parse the page source and download pics
             request_url = 'https://www.bing.com/images/async?q=' + urllib.parse.quote_plus(self.query) \
                           + '&first=' + str(self.page_counter) + '&count=' + str(self.limit) \
@@ -167,8 +191,8 @@ class Bing:
                 break
             links = re.findall('murl&quot;:&quot;(.*?)&quot;', html)
             if self.verbose:
-                print("[%] Indexed {} Images on Page {}.".format(len(links), self.page_counter + 1))
-                print("\n===============================================\n")
+                print(f"[%] Indexed {len(links)} Images on Page {self.page_counter + 1}")
+                print("===============================================")
 
             for link in links:
                 if self.download_count < self.limit and link not in self.seen:
@@ -176,4 +200,4 @@ class Bing:
                     self.download_image(link)
 
             self.page_counter += 1
-        print("\n\n[%] Done. Downloaded {} images.".format(self.download_count))
+        print(f"[%] Done. Downloaded {self.download_count} images.")
