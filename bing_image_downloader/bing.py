@@ -7,13 +7,14 @@ added attribution json file, containing name:link
 minor linting
 '''
 import warnings
-from typing import Optional
+from typing import Optional, Union
 import os.path as osp
 import urllib
 import urllib.request
 import re
 import imghdr
 import posixpath
+from pathlib import Path
 import hashlib
 import json
 
@@ -30,7 +31,7 @@ class Bing:
     def __init__(self,
                  query: str,
                  limit: int,
-                 output_dir: str,
+                 output_dir: Union[Path, str],
                  adult: str,
                  timeout: int,
                  img_type: Optional[str] = None, # filters
@@ -57,7 +58,7 @@ class Bing:
 
         self.download_count = 0
         self.query = query
-        self.output_dir = output_dir
+        self.output_dir = output_dir if isinstance(output_dir, Path) else Path(output_dir)
         self.adult = adult
         self.verbose = verbose
         self.seen = set()
@@ -65,7 +66,7 @@ class Bing:
         self.timeout = timeout
 
         self.filters = self.get_filters(img_type, color, size, aspect, people)
-        self.atribution_fname = osp.join(output_dir, "bing_dl.json")
+        self.atribution_fname = osp.join(osp.dirname(output_dir), "bing_dl.json")
         self.attribution = {}
 
         # self.headers = {'User-Agent': 'Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0'}
@@ -142,9 +143,8 @@ class Bing:
         if not imghdr.what(None, image):
             print(f'[Error]Invalid image, not saving {link}')
             raise ValueError(f'Invalid image, not saving {link}')
-        with open(str(file_path), 'wb') as _f:
+        with open(file_path, 'wb') as _f:
             _f.write(image)
-        self.add_atribution(link, file_path)
 
 
     def download_image(self, link):
@@ -165,15 +165,17 @@ class Bing:
                 # Download the image
                 print(f"[%] Downloading Image #{self.download_count} from {link}")
 
-            name =  self.output_dir.joinpath(f"{name}_{md5(link)}.{file_type}")
-            self.save_image(link, name)
+            file_path =  str(self.output_dir.joinpath(f"{name}_{md5(link)}.{file_type}"))
+            self.save_image(link, file_path)
+            name =  osp.join(osp.basename(self.output_dir), f"{name}_{md5(link)}.{file_type}")
+            self.add_atribution(link, name)
 
             if self.verbose:
                 print("[%] File Downloaded !")
 
         except Exception as _e:
             self.download_count -= 1
-            print(f"[!] Issue getting: {link}[!] Error:: {_e}")
+            print(f"[!] Issue getting: {link}\n[!] Error:: {_e}")
 
 
     def run(self):
