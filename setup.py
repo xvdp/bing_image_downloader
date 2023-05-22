@@ -5,9 +5,9 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="bing_image_downloader",
-    version="1.1.2",
-    author="Guru Prasad Singh",
-    author_email="g.gaurav541@gmail.com",
+    version="1.2.0",
+    author="Guru Prasad Singh_forked",
+    author_email="g.gaurav541@gmail.com_forked",
     description="Python library to download bulk images from Bing.com",
     long_description=long_description,
     long_description_content_type="text/markdown",

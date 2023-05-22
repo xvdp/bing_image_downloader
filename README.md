@@ -44,13 +44,16 @@ downloader.download(query_string, limit=100,  output_dir='.', people='face') # f
 `adult_filter_off` : (optional, default is True) Enable of disable adult filteration.<br />
 `force_replace` : (optional, default is False) Delete folder if present and start a fresh download.<br />
 `timeout` : (optional, default is 60) timeout for connection in seconds<br />
+`verbose` : (optional, default is True) Enable downloaded message.<br />
+Args added in this fork
+
 Filter args: replaces `filter` arg which only affected image type with more filters @xvdp added. not include in original repo<br />
 `color`:       None(all) or color, bw, RED, ORANGE, GREEN, YELLOW, TEAL, BLUE, PURPLE, BROWN, BLACK, GRAY, WHITE<br />
 `img_type`:    None(all) or [l]inedrawing, [p]hoto, [c]lipart, [g]if | [a]nimatedgif, [t]ransparent # can either be full name or first initial<br />
 `size`:        None(all) [w]allpaper, [l]arge, [m]edium, [s]mall # can either be full name or first initial<br />
 `people`:      None(all) [p]ortrait, [f]ace  # can either be full name or first initial<br />
 `aspect`:      None(all) [s]quare [w]ide [t]all # can either be full name or first initial<br />
-`verbose` : (optional, default is True) Enable downloaded message.<br />
+
 
 
 You can also test the programm by runnning `test.py keyword`

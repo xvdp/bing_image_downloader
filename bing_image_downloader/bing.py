@@ -35,15 +35,25 @@ class Bing:
                  output_dir: Union[Path, str],
                  adult: str,
                  timeout: int,
+                 *,
                  img_type: Optional[str] = None, # filters
                  color: Optional[str] = None, # filters
                  size: Optional[str] = None, # filters
                  aspect: Optional[str] = None, # filters
                  people: Optional[str] = None, # filters
+                 max_pages: Optional[int] = 50, 
                  verbose: bool = True) -> None:
         """
-        added filter args
-        filter args:
+        query       (str)  any image query
+        limit       (int)  max images
+        output_dir  (str)
+        adult       (str) 'off | on
+        timeaout    (int) seconds. prevent handing
+
+        keyword args: added u firj fork
+            max_pages   int(20) prevent endless loop if not enough unique images found.
+
+          filter args ( replace 'filter' with mostly complete filterning)
             color       None(all) or color, bw, RED, ORANGE, GREEN, YELLOW, TEAL, BLUE,
                                         PURPLE, BROWN, BLACK, GRAY, WHITE
                 img_type, size and aspect can either be full name or first initial
@@ -51,6 +61,8 @@ class Bing:
             size        None(all) [w]allpaper, [l]arge, [m]edium, [s]mall
             aspect      None(all) [s]quare [w]ide [t]all
             people      None(all) [f]face [p]portrait
+
+
             
 
         """
@@ -65,6 +77,7 @@ class Bing:
         self.seen = set()
         self.limit = limit
         self.timeout = timeout
+        self.max_pages = max_pages
 
         self.filters = self.get_filters(img_type, color, size, aspect, people)
         self.atribution_fname = osp.join(osp.dirname(output_dir), "bing_dl.json")
@@ -142,8 +155,7 @@ class Bing:
         request = urllib.request.Request(link, None, self.headers)
         image = urllib.request.urlopen(request, timeout=self.timeout).read()
         if not imghdr.what(None, image):
-            print(f'[Error]Invalid image, not saving {link}')
-            raise ValueError(f'Invalid image, not saving {link}')
+            raise ValueError(f'   Invalid image, not saving {link}')
         with open(file_path, 'wb') as _f:
             _f.write(image)
 
@@ -162,17 +174,12 @@ class Bing:
                                          "gif", "bmp", "png", "webp", "jpg"]:
                 file_type = "jpg"
 
-            if self.verbose:
-                # Download the image
-                print(f"[%] Downloading Image #{self.download_count} from {link}")
-
             file_path =  str(self.output_dir.joinpath(f"{name}_{md5(link)}.{file_type}"))
             self.save_image(link, file_path)
             name =  osp.join(osp.basename(self.output_dir), f"{name}_{md5(link)}.{file_type}")
             self.add_atribution(link, name)
-
             if self.verbose:
-                print("[%] File Downloaded !")
+                print(f"    Downloaded: {link} -> {name}" )
 
         except Exception as _e:
             self.download_count -= 1
@@ -181,11 +188,8 @@ class Bing:
 
     def run(self):
         _errors = 0
-        _max_errors = 5
-        _max_count = 70 # reset on downoads
-        while self.download_count < self.limit and self.page_counter < _max_count:
-            if self.verbose:
-                print(f'[!!]Indexing page: {self.page_counter + 1}')
+        _max_errors = 20
+        while self.download_count < self.limit and self.page_counter < self.max_pages:
             # Parse the page source and download pics
             request_url = 'https://www.bing.com/images/async?q=' + urllib.parse.quote_plus(self.query) \
                           + '&first=' + str(self.page_counter) + '&count=' + str(self.limit) \
@@ -193,29 +197,33 @@ class Bing:
             try:
                 request = urllib.request.Request(request_url, None, headers=self.headers)
                 response = urllib.request.urlopen(request)
-                html = response.read().decode('utf8')
-                if html ==  "":
-                    print("[%] No more images are available")
+                if response.status == 200:
+                    html = response.read().decode('utf8')
+                    if html ==  "":
+                        print(f"[%] No more images are available {request_url}")
+                        break
+                    links = re.findall('murl&quot;:&quot;(.*?)&quot;', html)
+                    if self.verbose:
+                        print(f"[%] Indexed {len(links)} Images on Page {self.page_counter + 1}")
+
+                    for link in links:
+                        if self.download_count < self.limit and link not in self.seen:
+                            self.seen.add(link)
+                            self.download_image(link)
+
+                    self.page_counter += 1
+                else:
+                    print(f" url status: {response.status}, {response.reason}, {request_url}")
                     break
-                links = re.findall('murl&quot;:&quot;(.*?)&quot;', html)
-                if self.verbose:
-                    print(f"[%] Indexed {len(links)} Images on Page {self.page_counter + 1}")
-                    print("===============================================")
-
-                for link in links:
-                    if self.download_count < self.limit and link not in self.seen:
-                        self.seen.add(link)
-                        self.download_image(link)
-                        _max_count = 0
-
-                self.page_counter += 1
             except Exception as _e:
-                print(f"url request Exception {_e} request{request }\n response {response}")
+                print(f"url request Exception {_e} request{request_url }\n response {response.status} {request_url}")
                 _errors += 1
                 time.sleep(1)
                 if _errors >= _max_errors:
                     print("\nmax-errors 5, sleeping 4 seconds...\n")
                     time.sleep(4)
                     break
+        search = request_url.split('q=')[1].replace('&', ' ').replace('filterui:', ' ').replace('qft=+', 'filters:').replace('+', ',')
+        print(f"[%] Done. Downloaded {self.download_count} images: {search}")
 
-        print(f"[%] Done. Downloaded {self.download_count} images.")
+
