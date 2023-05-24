@@ -18,6 +18,7 @@ import posixpath
 from pathlib import Path
 import hashlib
 import json
+from PIL import Image
 
 
 def md5(data):
@@ -137,14 +138,21 @@ class Bing:
         return out
 
 
-    def add_atribution(self, link, file_path):
+    def add_atribution(self, link, filepath, size):
         """ @xvdp basic traceability info relating the saved file to url
-        TODO test
+        TODO: change naming &  to :
+        
         """
+        # {'url': url, 'size': im.size, 'parent': new_folder, ext: ext, 'fullname': osp.join(new_folder, new_key+ext)}
         if osp.isfile(self.atribution_fname):
             with open(self.atribution_fname, 'r', encoding='utf8') as _fi:
                 self.attribution = json.load(_fi)
-        self.attribution[file_path] = link
+        # self.attribution[name] = link
+
+        parent, name  = osp.split(filepath)
+        name, ext = osp.splitext(name)
+
+        self.attribution[name] = {'url': link, 'size':size, 'parent': parent, 'ext': ext, 'fullname': filepath}
         with open(self.atribution_fname, 'w', encoding='utf8') as _fi:
             json.dump(self.attribution, _fi)
 
@@ -174,10 +182,13 @@ class Bing:
                                          "gif", "bmp", "png", "webp", "jpg"]:
                 file_type = "jpg"
 
-            file_path =  str(self.output_dir.joinpath(f"{name}_{md5(link)}.{file_type}"))
+            # file_path =  str(self.output_dir.joinpath(f"{name}_{md5(link)}.{file_type}"))
+            file_path =  str(self.output_dir.joinpath(f"{md5(link)}.{file_type}"))
             self.save_image(link, file_path)
-            name =  osp.join(osp.basename(self.output_dir), f"{name}_{md5(link)}.{file_type}")
-            self.add_atribution(link, name)
+            size = Image.open(file_path).size
+            name =  osp.join(osp.basename(self.output_dir), f"{md5(link)}.{file_type}")
+
+            self.add_atribution(link, name, size)
             if self.verbose:
                 print(f"    Downloaded: {link} -> {name}" )
 

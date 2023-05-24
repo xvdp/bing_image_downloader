@@ -5,13 +5,13 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="bing_image_downloader",
-    version="1.2.0",
-    author="Guru Prasad Singh_forked",
+    version="1.2.1",
+    author="Guru Prasad Singh_forked xvdp",
     author_email="g.gaurav541@gmail.com_forked",
     description="Python library to download bulk images from Bing.com",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/gurugaurav/bing_image_downloader",
+    url="https://github.com/xvdp/bing_image_downloader",
     keywords=['bing', 'images', 'scraping', 'image download', 'bulk image downloader',],
     packages=['bing_image_downloader'],
     classifiers=[
