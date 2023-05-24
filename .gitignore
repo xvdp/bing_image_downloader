@@ -6,3 +6,4 @@ image_search.egg-info
 **/.vscode/*
 bing_image_downloader.egg-info/
 build/
+version.py
