@@ -182,7 +182,6 @@ class Bing:
                                          "gif", "bmp", "png", "webp", "jpg"]:
                 file_type = "jpg"
 
-            # file_path =  str(self.output_dir.joinpath(f"{name}_{md5(link)}.{file_type}"))
             file_path =  str(self.output_dir.joinpath(f"{md5(link)}.{file_type}"))
             self.save_image(link, file_path)
             size = Image.open(file_path).size
